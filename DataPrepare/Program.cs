@@ -33,17 +33,45 @@ namespace DataPrepare
             {
                 return;
             }
-            Console.WriteLine("键入点阵图保存精度（例如28X28输入28,默认为28）：");
-            if (!int.TryParse(Console.ReadLine(), out var pixelWidth))
+            IDataConverter dataConverter = null;
+            var useConverterV1 = true;
+            Console.WriteLine("键入使用V1还是V2数据转换：（输入1或者2）");
+            if (int.TryParse(Console.ReadLine(), out var inputChoice))
             {
-                pixelWidth = 28;
+                if (inputChoice != 1)
+                    useConverterV1 = false;
             }
+            if (useConverterV1)
+            {
+                var dataConverterV1 = new DataConverterV1();
+                Console.WriteLine("键入点阵图保存精度（例如28X28输入28,默认为28）：");
+                if (!int.TryParse(Console.ReadLine(), out var pixelWidth))
+                {
+                    pixelWidth = 28;
+                }
+                dataConverterV1.PixelWidth = pixelWidth;
+                dataConverterV1.NeedSaveImage = false;
+                dataConverterV1.ImageSaveFolder = directoryInfo.CreateSubdirectory("Images");
+                dataConverter = dataConverterV1;
+            }
+            else
+            {
+                var dataConverterV2 = new DataConverterV2();
+                dataConverterV2.PickPointCount = 150;
+                dataConverter = dataConverterV2;
+            }
+
             var files = directoryInfo.GetFiles("*.ndjson");
-            //var imageSaveFolder = directoryInfo.CreateSubdirectory("Images");
             if (files?.Length > 0)
             {
                 using (var dataFile = new FileStream($"{directoryInfo.FullName}\\data{numberLimit}.csv", FileMode.Create))
                 {
+                    var header = dataConverter.GetHeader();
+                    if (!string.IsNullOrEmpty(header))
+                    {
+                        var buf = Encoding.UTF8.GetBytes(header);
+                        dataFile.Write(buf, 0, buf.Length);
+                    }
                     foreach (var ndjson in files)
                     {
                         using (var streamReader = ndjson.OpenText())
@@ -55,32 +83,8 @@ namespace DataPrepare
                                 {
                                     data = JsonConvert.DeserializeObject<DrawingInfo>(streamReader.ReadLine());
                                 } while (data.Recognized == false);
-                                var image = DrawPath(data.Data, 255f / pixelWidth);
-                                //SaveImage($"{imageSaveFolder.FullName}\\{data.KeyId}.png", image);
-                                var dotArray = GetDotArray(image, pixelWidth, pixelWidth);
-                                var dataStr = new StringBuilder();
-                                dataStr.Append($"{data.Word}");
-
-                                for (int j = 0; j < pixelWidth; j++)
-                                {
-                                    for (int k = 0; k < pixelWidth; k++)
-                                    {
-                                        if (dotArray[j, k])
-                                        {
-                                            //Console.Write("?");
-                                            dataStr.Append($",1");
-                                        }
-                                        else
-                                        {
-                                            //Console.Write("|");
-                                            dataStr.Append($",0");
-                                        }
-                                    }
-                                    //Console.Write(Environment.NewLine);
-                                }
-
-                                dataStr.Append(Environment.NewLine);
-                                var buf = Encoding.UTF8.GetBytes(dataStr.ToString());
+                                var dataStr = dataConverter.CovertData(data);
+                                var buf = Encoding.UTF8.GetBytes(dataStr);
                                 dataFile.Write(buf, 0, buf.Length);
                             }
 
@@ -89,76 +93,6 @@ namespace DataPrepare
                     dataFile.Flush();
                     dataFile.Close();
                 }
-            }
-        }
-
-        private static SKImage DrawPath(IEnumerable<int[][]> points,float strokeWidth)
-        {
-            var info = new SKImageInfo(255, 255);
-            using (var surface = SKSurface.Create(info))
-            {
-                SKCanvas canvas = surface.Canvas;
-
-                canvas.Clear(SKColors.Transparent);
-
-                var paint = new SKPaint
-                {
-                    StrokeWidth = strokeWidth,
-                    Style = SKPaintStyle.Stroke,
-                    Color = new SKColor(0x00, 0x00, 0x00),
-                    StrokeCap = SKStrokeCap.Round,
-
-                };
-                foreach (var pathData in points)
-                {
-                    if (pathData[0].Length == 1)
-                    {
-                        canvas.DrawPoint(new SKPoint(pathData[0][0], pathData[1][0]), paint);
-                    }
-                    else if (pathData[0].Length > 1)
-                    {
-                        var path = new SKPath();
-                        path.MoveTo(new SKPoint(pathData[0][0], pathData[1][0]));
-                        for (int i = 1; i < pathData[0].Length; i++)
-                        {
-                            path.LineTo(new SKPoint(pathData[0][i], pathData[1][i]));
-                        }
-                        canvas.DrawPath(path, paint);
-                    }
-                }
-                return surface.Snapshot();
-            }
-        }
-
-        private static bool[,] GetDotArray(SKImage image, int rowCount, int colCount)
-        {
-            var path = new bool[rowCount, colCount];
-            var startPoint = new SKPoint();
-
-            var pixels = image.PeekPixels();
-            var rectSize = new SKPoint(image.Width / (float)colCount, image.Height / (float)rowCount);
-            for (var i = 0; i < rowCount; i++)
-            {
-                startPoint.X = 0;
-                for (var j = 0; j < colCount; j++)
-                {
-                    var pixelColor = pixels.GetPixelColor((int)(startPoint.X + rectSize.X / 2), (int)(startPoint.Y + rectSize.Y / 2));
-                    path[i, j] = pixelColor.Alpha > 0;
-                    startPoint.X += rectSize.X;
-                }
-
-                startPoint.Y += rectSize.Y;
-            }
-            pixels.Dispose();
-            return path;
-        }
-        private static void SaveImage(string filePath, SKImage image)
-        {
-            using (var imageFile = new FileStream(filePath, FileMode.Create))
-            {
-                var imageData = image.Encode();
-                imageData.SaveTo(imageFile);
-                imageData.Dispose();
             }
         }
     }
