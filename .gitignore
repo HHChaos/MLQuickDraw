@@ -338,3 +338,4 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+/MLQuickDraw.ConsoleApp/Data/data5000.csv

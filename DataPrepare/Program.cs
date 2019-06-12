@@ -55,7 +55,7 @@ namespace DataPrepare
                                 {
                                     data = JsonConvert.DeserializeObject<DrawingInfo>(streamReader.ReadLine());
                                 } while (data.Recognized == false);
-                                var image = DrawPath(data.Data);
+                                var image = DrawPath(data.Data, 255f / pixelWidth);
                                 //SaveImage($"{imageSaveFolder.FullName}\\{data.KeyId}.png", image);
                                 var dotArray = GetDotArray(image, pixelWidth, pixelWidth);
                                 var dataStr = new StringBuilder();
@@ -92,7 +92,7 @@ namespace DataPrepare
             }
         }
 
-        private static SKImage DrawPath(IEnumerable<int[][]> points)
+        private static SKImage DrawPath(IEnumerable<int[][]> points,float strokeWidth)
         {
             var info = new SKImageInfo(255, 255);
             using (var surface = SKSurface.Create(info))
@@ -103,7 +103,7 @@ namespace DataPrepare
 
                 var paint = new SKPaint
                 {
-                    StrokeWidth = 9.8f,
+                    StrokeWidth = strokeWidth,
                     Style = SKPaintStyle.Stroke,
                     Color = new SKColor(0x00, 0x00, 0x00),
                     StrokeCap = SKStrokeCap.Round,
@@ -111,7 +111,11 @@ namespace DataPrepare
                 };
                 foreach (var pathData in points)
                 {
-                    if (pathData[0].Length > 2)
+                    if (pathData[0].Length == 1)
+                    {
+                        canvas.DrawPoint(new SKPoint(pathData[0][0], pathData[1][0]), paint);
+                    }
+                    else if (pathData[0].Length > 1)
                     {
                         var path = new SKPath();
                         path.MoveTo(new SKPoint(pathData[0][0], pathData[1][0]));
