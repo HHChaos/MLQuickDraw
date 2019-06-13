@@ -79,16 +79,24 @@ namespace DataPrepare
                         {
                             for (int i = 0; i < numberLimit; i++)
                             {
-                                DrawingInfo data;
+                                DrawingInfo data = null;
                                 do
                                 {
+                                    if (streamReader.EndOfStream)
+                                        break;
                                     data = JsonConvert.DeserializeObject<DrawingInfo>(streamReader.ReadLine());
                                 } while (data.Recognized == false);
-                                var dataStr = dataConverter.CovertData(data);
-                                var buf = Encoding.UTF8.GetBytes(dataStr);
-                                dataFile.Write(buf, 0, buf.Length);
-                            }
+                                if (data != null)
+                                {
+                                    var dataStr = dataConverter.CovertData(data);
+                                    if (!string.IsNullOrEmpty(dataStr))
+                                    {
+                                        var buf = Encoding.UTF8.GetBytes(dataStr);
+                                        dataFile.Write(buf, 0, buf.Length);
+                                    }
+                                }
 
+                            }
                         }
                     }
                     dataFile.Flush();

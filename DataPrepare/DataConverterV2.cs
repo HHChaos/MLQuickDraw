@@ -22,19 +22,27 @@ namespace DataPrepare
             for (int i = 0; i < paths.Length; i++)
             {
                 var pathPoints = GetPathPoints(paths[i]);
-                points.AddRange(pathPoints);
+                if (pathPoints?.Length > 0)
+                    points.AddRange(pathPoints);
             }
-            var dataStr = new StringBuilder();
-            dataStr.Append($"{data.Word}");
-            for (int i = 0; i < PickPointCount; i++)
+            if (points?.Count > 0)
             {
-                var index = i > (points.Count - 1) ? points.Count - 1 : i;
-                var point = points[index];
-                dataStr.Append($",{point.X.ToString("f1")}");
-                dataStr.Append($",{point.Y.ToString("f1")}");
+                var dataStr = new StringBuilder();
+                dataStr.Append($"{data.Word}");
+                for (int i = 0; i < PickPointCount; i++)
+                {
+                    var index = i > (points.Count - 1) ? points.Count - 1 : i;
+                    var point = points[index];
+                    dataStr.Append($",{point.X.ToString("f1")}");
+                    dataStr.Append($",{point.Y.ToString("f1")}");
+                }
+                dataStr.Append(Environment.NewLine);
+                return dataStr.ToString();
             }
-            dataStr.Append(Environment.NewLine);
-            return dataStr.ToString();
+            else
+            {
+                return null;
+            }
         }
 
         public string GetHeader()
@@ -83,13 +91,16 @@ namespace DataPrepare
             var totalLength = skPaths.Aggregate<PathInfo, double>(0, (current, item) => current + item.Length);
             for (int i = 0; i < skPaths.Length; i++)
             {
-                skPaths[i].PickPointCount = (int)Math.Round(skPaths[i].Length / totalLength * totalPickPointCount);
+                if (skPaths[i].Length > 0)
+                    skPaths[i].PickPointCount = (int)Math.Round(skPaths[i].Length / totalLength * totalPickPointCount);
             }
             return skPaths;
         }
 
         private SKPoint[] GetPathPoints(PathInfo info)
         {
+            if (info.PickPointCount == 0)
+                return null;
             var points = new SKPoint[info.PickPointCount];
             var pathMeasure = new SKPathMeasure();
             pathMeasure.SetPath(info.Path,false);
