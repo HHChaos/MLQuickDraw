@@ -9,21 +9,20 @@ using System.Text;
 
 namespace MLQuickDraw.ConsoleApp
 {
-    public static class ModelBuilder
+    public static class ModelBuilderV2
     {
-        private static string TRAIN_DATA_FILEPATH = @"Data\data5000.csv";
-        private static string MODEL_FILEPATH = @"MLModel.zip";
+        private static string MODEL_FILEPATH = @"MLModelV2.zip";
 
         // Create MLContext to be shared across the model creation workflow objects 
         // Set a random seed for repeatable/deterministic results across multiple trainings.
         private static MLContext mlContext = new MLContext(seed: 1);
 
-        public static void CreateModel()
+        public static void CreateModel(string trainDataPath)
         {
             // Load Data
-            IDataView trainingDataView = mlContext.Data.LoadFromTextFile<ModelInput>(
-                                            path: TRAIN_DATA_FILEPATH,
-                                            hasHeader: false,
+            IDataView trainingDataView = mlContext.Data.LoadFromTextFile<ModelInputV2>(
+                                            path: trainDataPath,
+                                            hasHeader: true,
                                             separatorChar: ',',
                                             allowQuoting: true,
                                             allowSparse: false);
@@ -46,7 +45,6 @@ namespace MLQuickDraw.ConsoleApp
             // Data process configuration with pipeline data transformations 
             var dataProcessPipeline = mlContext.Transforms.Conversion.MapValueToKey("Label", "Label")
                                       .Append(mlContext.Transforms.Concatenate("Features", new[] { "Data" }));
-
             // Set the training algorithm 
             var trainer = mlContext.MulticlassClassification.Trainers.LightGbm(labelColumnName: "Label", featureColumnName: "Features")
                                       .Append(mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel", "PredictedLabel"));

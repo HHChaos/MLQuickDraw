@@ -35,7 +35,7 @@ namespace DataPrepare
             }
             IDataConverter dataConverter = null;
             var useConverterV1 = true;
-            Console.WriteLine("键入使用V1还是V2数据转换：（输入1或者2）");
+            Console.WriteLine("键入使用V1还是V2数据转换：（输入1或者2，推荐使用V2，训练时间短，效果也好的多）");
             if (int.TryParse(Console.ReadLine(), out var inputChoice))
             {
                 if (inputChoice != 1)
@@ -44,12 +44,13 @@ namespace DataPrepare
             if (useConverterV1)
             {
                 var dataConverterV1 = new DataConverterV1();
-                Console.WriteLine("键入点阵图保存精度（例如28X28输入28,默认为28）：");
-                if (!int.TryParse(Console.ReadLine(), out var pixelWidth))
-                {
-                    pixelWidth = 28;
-                }
-                dataConverterV1.PixelWidth = pixelWidth;
+                //Console.WriteLine("键入点阵图保存精度（例如28X28输入28,默认为28）：");
+                //if (!int.TryParse(Console.ReadLine(), out var pixelWidth))
+                //{
+                //    pixelWidth = 28;
+                //}
+                //dataConverterV1.PixelWidth = pixelWidth;
+                dataConverterV1.PixelWidth = 28;
                 dataConverterV1.NeedSaveImage = false;
                 dataConverterV1.ImageSaveFolder = directoryInfo.CreateSubdirectory("Images");
                 dataConverter = dataConverterV1;

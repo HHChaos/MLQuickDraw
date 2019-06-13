@@ -14,10 +14,4 @@
     <ProjectReference Include="..\MLQuickDraw.Model\MLQuickDraw.Model.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="Data\data5000.csv">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>
