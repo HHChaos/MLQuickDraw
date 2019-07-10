@@ -51,8 +51,8 @@ namespace DataPrepare
             headerBuilder.Append("Label");
             for (int i = 0; i < PickPointCount; i++)
             {
-                headerBuilder.Append($",Point{i}");
-                headerBuilder.Append($",Point{i}");
+                headerBuilder.Append($",Point{i}X");
+                headerBuilder.Append($",Point{i}Y");
             }
             headerBuilder.Append(Environment.NewLine);
             return headerBuilder.ToString();
