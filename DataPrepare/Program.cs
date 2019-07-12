@@ -62,9 +62,11 @@ namespace DataPrepare
                 dataConverter = dataConverterV2;
             }
 
+
             var files = directoryInfo.GetFiles("*.ndjson");
             if (files?.Length > 0)
             {
+                var streamReaders = new List<StreamReader>();
                 using (var dataFile = new FileStream($"{directoryInfo.FullName}\\data{numberLimit}.csv", FileMode.Create))
                 {
                     var header = dataConverter.GetHeader();
@@ -75,28 +77,39 @@ namespace DataPrepare
                     }
                     foreach (var ndjson in files)
                     {
-                        using (var streamReader = ndjson.OpenText())
-                        {
-                            for (int i = 0; i < numberLimit; i++)
-                            {
-                                DrawingInfo data = null;
-                                do
-                                {
-                                    if (streamReader.EndOfStream)
-                                        break;
-                                    data = JsonConvert.DeserializeObject<DrawingInfo>(streamReader.ReadLine());
-                                } while (data.Recognized == false);
-                                if (data != null)
-                                {
-                                    var dataStr = dataConverter.CovertData(data);
-                                    if (!string.IsNullOrEmpty(dataStr))
-                                    {
-                                        var buf = Encoding.UTF8.GetBytes(dataStr);
-                                        dataFile.Write(buf, 0, buf.Length);
-                                    }
-                                }
+                        streamReaders.Add(ndjson.OpenText());
+                    }
 
+                    var rand = new Random();
+
+                    for (int i = 0; i < numberLimit; i++)
+                    {
+                        var dataList = new List<DrawingInfo>();
+                        foreach (var reader in streamReaders)
+                        {
+                            DrawingInfo data = null;
+                            do
+                            {
+                                if (reader.EndOfStream)
+                                    break;
+                                data = JsonConvert.DeserializeObject<DrawingInfo>(reader.ReadLine());
+                            } while (data.Recognized == false);
+                            if (data != null)
+                            {
+                                dataList.Add(data);
                             }
+                        }
+
+                        while (dataList.Count > 0)
+                        {
+                            var index = rand.Next(dataList.Count - 1);
+                            var dataStr = dataConverter.CovertData(dataList[index]);
+                            if (!string.IsNullOrEmpty(dataStr))
+                            {
+                                var buf = Encoding.UTF8.GetBytes(dataStr);
+                                dataFile.Write(buf, 0, buf.Length);
+                            }
+                            dataList.RemoveAt(index);
                         }
                     }
                     dataFile.Flush();
